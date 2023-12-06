@@ -8,7 +8,7 @@ dotenv.config({ path: path.join(process.cwd(), '.env') });
 const config = {
   port: process.env.PORT || 5000, // Default to port 3000 if not provided in .env
   mongodb: process.env.MONGODB_URL,
-  bcryptSalt: process.env.BCRYPT_SALT,
+  bcryptSalt: Number(process.env.BCRYPT_SALT),
 };
 
 export default config;
