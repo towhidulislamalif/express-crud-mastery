@@ -1,10 +1,24 @@
 import { Request, Response } from 'express';
 import userSchemaValidation from '../zod/zod';
 import userServices from '../services/userService';
+import UserModel from '../models/userModel';
 
 const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await userServices.getAllUsers();
+
+    if (!users || users.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: 'Users not found',
+        error: {
+          code: 404,
+          description: 'Users not found',
+        },
+      });
+      return;
+    }
+
     res.status(200).json({
       success: true,
       message: 'Users fetched successfully',
@@ -12,10 +26,45 @@ const getAllUsers = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error('Error fetching users:', error);
-
     res.status(500).json({
       success: false,
       message: 'Internal server error',
+      error: {
+        code: 500,
+        description: 'Something went wrong while fetching users.',
+      },
+    });
+  }
+};
+
+const getUserById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId: number = parseInt(req.params.userId, 10);
+
+    if (!(await UserModel.isUserExist(userId))) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: {
+          code: 404,
+          description: 'User not found',
+        },
+      });
+      return;
+    }
+
+    const user = await userServices.getUserById(userId);
+
+    res.json({
+      success: true,
+      message: 'User fetched successfully!',
+      data: user,
+    });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
       error: {
         code: 500,
         description: 'Something went wrong while fetching users.',
@@ -49,7 +98,6 @@ const createUser = async (req: Request, res: Response): Promise<void> => {
       data: createdUser,
     });
   } catch (error) {
-    // Handle internal server error
     console.error('Error creating user:', error);
     res.status(500).json({
       success: false,
@@ -59,9 +107,78 @@ const createUser = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+const getOrdersForSpecificUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = parseInt(req.params.userId);
+    if (!(await UserModel.isUserExist(userId))) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: {
+          code: 404,
+          description: 'User not found',
+        },
+      });
+      return;
+    }
+    const orders = await userServices.getOrdersForSpecificUser(userId);
+    res.json({
+      success: true,
+      message: 'Orders fetched successfully!',
+      data: orders,
+    });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+      error: {
+        code: 500,
+        description: 'Something went wrong while fetching orders.',
+      },
+    });
+  }
+};
+
+const getSpecificUserOrderWithTotalPrice = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = parseInt(req.params.userId);
+    if (!(await UserModel.isUserExist(userId))) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: {
+          code: 404,
+          description: 'User not found',
+        },
+      });
+      return;
+    }
+    const totalPrice = await userServices.getSpecificUserOrderWithTotalPrice(userId);
+    res.json({
+      success: true,
+      message: 'Total price calculated successfully!',
+      data: totalPrice,
+    });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+      error: {
+        code: 500,
+        description: 'Something went wrong while fetching orders.',
+      },
+    });
+  }
+};
+
 const userControllers = {
   getAllUsers,
+  getUserById,
   createUser,
+  getOrdersForSpecificUser,
+  getSpecificUserOrderWithTotalPrice,
 };
 
 export default userControllers;

@@ -1,9 +1,9 @@
-import { Schema, model } from 'mongoose';
+import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
-import IUser from '../types/userTypes';
 import config from '../config/config';
+import { IUser, UserModel } from '../types/userTypes';
 
-const userSchema = new Schema<IUser>({
+const userSchema = new mongoose.Schema<IUser, UserModel>({
   userId: { type: Number, required: true, unique: true },
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true },
@@ -58,7 +58,12 @@ userSchema.post('save', function (doc, next) {
   next();
 });
 
-const UserModel = model<IUser>('Users', userSchema);
+// Add a static method to the schema to check if a user exists by userId
+userSchema.statics.isUserExist = async function (userId: number): Promise<IUser | null> {
+  return await UserModel.findOne({ userId });
+};
+
+const UserModel = mongoose.model<IUser, UserModel>('Users', userSchema);
 
 export default UserModel;
 /* import { Schema, model } from 'mongoose';
