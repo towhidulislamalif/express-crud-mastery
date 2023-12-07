@@ -2,38 +2,45 @@ import { Request, Response } from 'express';
 import userSchemaValidation from '../zod/zod';
 import userServices from '../services/userService';
 import UserModel from '../models/userModel';
+import { Order } from '../types/userTypes';
+
+const handleSuccess = <T>(res: Response, message: string, data: T): void => {
+  res.status(200).json({ success: true, message, data });
+};
+
+const handleNotFound = (res: Response, message: string): void => {
+  res.status(404).json({
+    success: false,
+    message,
+    error: { code: 404, description: message },
+  });
+};
+
+const handleServerError = (res: Response, error: Error): void => {
+  console.error('Internal server error:', error);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: {
+      code: 500,
+      description: 'Something went wrong.',
+      details: error.message,
+    },
+  });
+};
 
 const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await userServices.getAllUsers();
 
-    if (!users || users.length === 0) {
-      res.status(404).json({
-        success: false,
-        message: 'Users not found',
-        error: {
-          code: 404,
-          description: 'Users not found',
-        },
-      });
+    if (!users?.length) {
+      handleNotFound(res, 'Users not found');
       return;
     }
 
-    res.status(200).json({
-      success: true,
-      message: 'Users fetched successfully',
-      data: users,
-    });
+    handleSuccess(res, 'Users fetched successfully!', users);
   } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: {
-        code: 500,
-        description: 'Something went wrong while fetching users.',
-      },
-    });
+    handleServerError(res, error as Error);
   }
 };
 
@@ -41,6 +48,98 @@ const getUserById = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId: number = parseInt(req.params.userId, 10);
 
+    if (isNaN(userId)) {
+      handleNotFound(res, 'User not found');
+      return;
+    }
+
+    if (!(await UserModel.isUserExist(userId))) {
+      handleNotFound(res, 'User not found');
+      return;
+    }
+
+    const user = await userServices.getUserById(userId);
+
+    handleSuccess(res, 'User fetched successfully!', user);
+  } catch (error) {
+    handleServerError(res, error as Error);
+  }
+};
+
+const createUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const newUser = req.body;
+
+    // Validate user input
+    const validationResult = userSchemaValidation.safeParse(newUser);
+
+    if (!validationResult.success) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        error: validationResult.error.issues[0].message,
+      });
+      return;
+    }
+    // Create user in the database
+    const createdUser = await userServices.createUser(validationResult.data);
+
+    // Send success response
+    handleSuccess(res, 'User created successfully!', createdUser);
+  } catch (error) {
+    handleServerError(res, error as Error);
+  }
+};
+
+const updateUserById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId: number = parseInt(req.params.userId, 10);
+    const newUserData = req.body;
+
+    if (isNaN(userId)) {
+      handleNotFound(res, 'User not found');
+      return;
+    }
+
+    if (!(await UserModel.isUserExist(userId))) {
+      handleNotFound(res, 'User not found');
+      return;
+    }
+
+    const updatedUser = await userServices.updateUserById(userId, newUserData);
+
+    handleSuccess(res, 'User updated successfully!', updatedUser);
+  } catch (error) {
+    handleServerError(res, error as Error);
+  }
+};
+
+const deleteUserById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId: number = parseInt(req.params.userId, 10);
+
+    if (isNaN(userId)) {
+      handleNotFound(res, 'User not found');
+      return;
+    }
+
+    if (!(await UserModel.isUserExist(userId))) {
+      handleNotFound(res, 'User not found');
+      return;
+    }
+
+    const user = await userServices.deleteUserById(userId);
+    handleSuccess(res, 'User deleted successfully!', user);
+  } catch (error) {
+    handleServerError(res, error as Error);
+  }
+};
+
+// ! some modifications needed
+const addOrdersForSpecificUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const ordersData: Order = req.body;
+    const userId = parseInt(req.params.userId);
     if (!(await UserModel.isUserExist(userId))) {
       res.status(404).json({
         success: false,
@@ -52,57 +151,21 @@ const getUserById = async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
-
-    const user = await userServices.getUserById(userId);
-
+    const orders = await userServices.addOrdersForSpecificUser(userId, ordersData);
     res.json({
       success: true,
-      message: 'User fetched successfully!',
-      data: user,
+      message: 'Orders fetched successfully!',
+      data: orders,
     });
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error('Error fetching orders:', error);
     res.status(500).json({
       success: false,
       message: 'Internal Server Error',
       error: {
         code: 500,
-        description: 'Something went wrong while fetching users.',
+        description: 'Something went wrong while fetching orders.',
       },
-    });
-  }
-};
-
-const createUser = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const newUser = req.body;
-
-    // Validate user input
-    const validationResult = userSchemaValidation.safeParse(newUser);
-    if (!validationResult.success) {
-      res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        error: validationResult.error.issues[0].message,
-      });
-      return;
-    }
-
-    // Create user in the database
-    const createdUser = await userServices.createUser(validationResult.data);
-
-    // Send success response
-    res.json({
-      success: true,
-      message: 'User created successfully',
-      data: createdUser,
-    });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal Server Error',
-      error: error || 'Unknown error',
     });
   }
 };
@@ -177,6 +240,9 @@ const userControllers = {
   getAllUsers,
   getUserById,
   createUser,
+  updateUserById,
+  deleteUserById,
+  addOrdersForSpecificUser,
   getOrdersForSpecificUser,
   getSpecificUserOrderWithTotalPrice,
 };

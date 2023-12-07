@@ -3,10 +3,10 @@ import { IUser, Order } from '../types/userTypes';
 
 const getAllUsers = async (): Promise<IUser[] | null> => {
   try {
-    const users = await UserModel.find({}, 'username email fullName age address');
+    const users = await UserModel.find({}, '-_id username email fullName age address');
     return users;
   } catch (error) {
-    console.error('Failed to fetch users:', error);
+    /*     console.error('Failed to fetch users:', error); */
     throw new Error('Failed to fetch users');
   }
 };
@@ -15,7 +15,7 @@ const getUserById = async (userId: number): Promise<IUser | null> => {
   try {
     const user = await UserModel.findOne(
       { userId },
-      'userId username email fullName age hobbies address isActive',
+      '-_id userId username email fullName age hobbies address isActive',
     );
 
     return user;
@@ -34,6 +34,54 @@ const createUser = async (user: IUser): Promise<IUser | null> => {
     throw new Error('Failed to create user');
   }
 };
+
+const updateUserById = async (userId: number, newUserData: IUser): Promise<IUser | null> => {
+  try {
+    const user = await UserModel.findOneAndUpdate(
+      { userId },
+      { $set: { ...newUserData } },
+      { new: true, upsert: true },
+    );
+
+    return user;
+  } catch (error) {
+    console.error('Failed to update user:', error);
+    throw new Error('Failed to update user');
+  }
+};
+
+const deleteUserById = async (userId: number): Promise<unknown> => {
+  try {
+    const user = await UserModel.updateOne(
+      { userId },
+      { isActive: false },
+      { new: true, upsert: true },
+    );
+    return user;
+  } catch (error) {
+    console.error('Failed to delete user:', error);
+    throw new Error('Failed to delete user');
+  }
+};
+
+//! some modification needed
+async function addOrdersForSpecificUser(userId: number, ordersData: Order) {
+  try {
+    const orders = await UserModel.updateOne(
+      { userId },
+      {
+        $addToSet: {
+          orders: { $each: [ordersData] },
+        },
+      },
+      { upsert: true },
+    );
+    return orders;
+  } catch (error) {
+    console.error('Failed to fetch orders:', error);
+    throw new Error('Failed to fetch orders');
+  }
+}
 
 async function getOrdersForSpecificUser(userId: number): Promise<Order[] | null> {
   try {
@@ -73,6 +121,9 @@ const userServices = {
   getAllUsers,
   getUserById,
   createUser,
+  updateUserById,
+  deleteUserById,
+  addOrdersForSpecificUser,
   getOrdersForSpecificUser,
   getSpecificUserOrderWithTotalPrice,
 };

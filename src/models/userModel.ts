@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema<IUser, UserModel>({
       firstName: { type: String, required: true },
       lastName: { type: String, required: true },
     },
+    _id: false,
     required: true,
   },
   age: { type: Number, required: true },
@@ -23,6 +24,7 @@ const userSchema = new mongoose.Schema<IUser, UserModel>({
       city: { type: String, required: true },
       country: { type: String, required: true },
     },
+    _id: false,
     required: true,
   },
   orders: {
@@ -31,6 +33,7 @@ const userSchema = new mongoose.Schema<IUser, UserModel>({
         productName: { type: String, required: true },
         price: { type: Number, required: true },
         quantity: { type: Number, required: true },
+        _id: false,
       },
     ],
     required: true,
@@ -55,6 +58,20 @@ userSchema.pre('save', async function (next) {
 // Post-save middleware to remove sensitive information
 userSchema.post('save', function (doc, next) {
   doc.password = '';
+  next();
+});
+
+userSchema.post('findOneAndUpdate', function (doc, next) {
+  doc.password = undefined;
+  next();
+});
+
+userSchema.pre('find', async function (next) {
+  this.find({ isActive: { $ne: false } });
+  next();
+});
+userSchema.pre('findOne', async function (next) {
+  this.find({ isActive: { $ne: false } });
   next();
 });
 
