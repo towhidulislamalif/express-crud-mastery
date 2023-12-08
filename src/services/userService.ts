@@ -3,7 +3,7 @@ import { IUser, Order } from '../types/userTypes';
 
 const getAllUsers = async (): Promise<IUser[] | null> => {
   try {
-    const users = await UserModel.find({}, '-_id username email fullName age address');
+    const users = await UserModel.find({});
     return users;
   } catch (error) {
     throw new Error('Failed to fetch users');
@@ -12,10 +12,7 @@ const getAllUsers = async (): Promise<IUser[] | null> => {
 
 const getUserById = async (userId: number): Promise<IUser | null> => {
   try {
-    const user = await UserModel.findOne(
-      { userId },
-      '-_id userId username email fullName age hobbies address isActive',
-    );
+    const user = await UserModel.findOne({ userId });
 
     return user;
   } catch (error) {
@@ -66,7 +63,7 @@ async function addOrdersForSpecificUser(userId: number, ordersData: Order): Prom
       { userId },
       {
         $addToSet: {
-          orders: { $each: ordersData },
+          orders: { $each: [ordersData] },
         },
       },
       { upsert: true },

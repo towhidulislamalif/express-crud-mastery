@@ -61,17 +61,20 @@ userSchema.post('save', function (doc, next) {
   next();
 });
 
-userSchema.post('findOneAndUpdate', function (doc, next) {
-  doc.password = undefined;
+userSchema.pre('findOneAndUpdate', function (next) {
+  this.select('-password -orders');
   next();
 });
 
-userSchema.pre('find', async function (next) {
+userSchema.pre('find', function (next) {
   this.find({ isActive: { $ne: false } });
+  this.select('-_id username email fullName age address');
   next();
 });
-userSchema.pre('findOne', async function (next) {
+
+userSchema.pre('findOne', function (next) {
   this.find({ isActive: { $ne: false } });
+  this.select('-_id userId username email fullName age hobbies address isActive');
   next();
 });
 
