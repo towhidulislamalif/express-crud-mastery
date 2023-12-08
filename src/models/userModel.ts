@@ -43,8 +43,6 @@ const userSchema = new mongoose.Schema<IUser, UserModel>({
 
 // Pre-save middleware to hash the user's password
 userSchema.pre('save', async function (next) {
-  this.set('orders', undefined);
-  this.set('password', undefined);
   try {
     const salt = await bcrypt.genSalt(config.bcryptSalt);
     const hashedPassword = await bcrypt.hash(this.password, salt);
@@ -57,7 +55,6 @@ userSchema.pre('save', async function (next) {
 // Post-save middleware to remove sensitive information
 userSchema.post('save', function (doc, next) {
   doc.password = '';
-
   next();
 });
 
