@@ -82,7 +82,7 @@ async function getOrdersForSpecificUser(userId: number): Promise<Order[] | null>
       { $project: { orders: 1, _id: 0 } },
     ]);
 
-    return orders as Order[] | null;
+    return orders[0] as Order[] | null;
   } catch (error) {
     throw new Error('Failed to fetch orders');
   }

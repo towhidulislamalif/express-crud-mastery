@@ -1,26 +1,29 @@
 import mongoose from 'mongoose';
 
-// Use type aliases for primitive types
-type Userid = number;
+// Type aliases for primitive types
+type UserId = number;
 type Username = string;
 type Email = string;
 type Password = string;
 type Age = number;
 
+// Address interface
 interface Address {
   street: string;
   city: string;
   country: string;
 }
 
+// Order interface
 export interface Order {
   productName: string;
   price: number;
   quantity: number;
 }
 
+// User interface
 export interface IUser {
-  userId: Userid;
+  userId: UserId;
   username: Username;
   email: Email;
   password: Password;
@@ -31,7 +34,7 @@ export interface IUser {
   age: Age;
   hobbies: string[];
   address: Address;
-  orders: Order[];
+  orders?: Order[];
   isActive: boolean;
 }
 

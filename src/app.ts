@@ -14,7 +14,7 @@ app.use('/api/users', userRouter);
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
-    message: 'Success loading the application',
+    message: 'Success loading the application!',
   });
 });
 

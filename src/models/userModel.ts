@@ -9,34 +9,33 @@ const userSchema = new mongoose.Schema<IUser, UserModel>({
   email: { type: String, required: true },
   password: { type: String, required: true },
   fullName: {
+    _id: false,
     type: {
       firstName: { type: String, required: true },
       lastName: { type: String, required: true },
     },
-    _id: false,
     required: true,
   },
   age: { type: Number, required: true },
   hobbies: { type: [String] },
   address: {
+    _id: false,
     type: {
       street: { type: String, required: true },
       city: { type: String, required: true },
       country: { type: String, required: true },
     },
-    _id: false,
     required: true,
   },
   orders: {
     type: [
       {
+        _id: false,
         productName: { type: String, required: true },
         price: { type: Number, required: true },
         quantity: { type: Number, required: true },
-        _id: false,
       },
     ],
-    required: true,
   },
   isActive: { type: Boolean, default: true },
 });
