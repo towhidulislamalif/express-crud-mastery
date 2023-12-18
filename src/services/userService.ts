@@ -31,11 +31,38 @@ const createUser = async (user: IUser): Promise<IUser | null> => {
 
 const updateUserById = async (userId: number, newUserData: IUser): Promise<IUser | null> => {
   try {
-    const user = await UserModel.findOneAndUpdate(
-      { userId },
-      { $set: { ...newUserData } },
-      { new: true, upsert: true },
-    );
+    const { fullName, hobbies, address, ...remainingField } = newUserData;
+
+    const modifiedData: Record<string, unknown> = {
+      ...remainingField,
+    };
+
+    const mapAndAssignProperties = (
+      target: Record<string, unknown>,
+      source: Record<string, unknown>,
+      prefix: string,
+    ) => {
+      for (const [key, value] of Object.entries(source)) {
+        target[`${prefix}.${key}`] = value;
+      }
+    };
+
+    if (fullName && Object.keys(fullName).length) {
+      mapAndAssignProperties(modifiedData, fullName, 'fullName');
+    }
+
+    if (address && Object.keys(address).length) {
+      mapAndAssignProperties(modifiedData, address, 'address');
+    }
+
+    if (hobbies && hobbies.length) {
+      modifiedData['hobbies'] = hobbies;
+    }
+
+    const user = await UserModel.findOneAndUpdate({ userId }, modifiedData, {
+      new: true,
+      upsert: true,
+    });
 
     // Ensure that the returned user matches the IUser type
     return user;
